@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/NelliBtn/Tiny-App/issues"
   },
-  "homepage": "https://github.com/NelliBtn/Tiny-App#readme"
+  "homepage": "https://github.com/NelliBtn/Tiny-App#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
