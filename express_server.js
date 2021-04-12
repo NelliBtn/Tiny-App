@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express(); // pretty much 'Create server'
 const PORT = 8080; // default port 8080
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set("view engine", "ejs"); // tells the Express app to use EJS as its templating engine
 
@@ -24,7 +26,24 @@ This is so we can use the key of that variable (in the above case the key is url
 to access the data within our template.
 */
 
-app.get("/urls/:shortURL", (req, res) => {
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+function generateRandomString(length) {
+  return Math.random().toString(36).substr(2, length)
+}
+
+app.post("/u", (req, res) => {
+  console.log(req.body);  // Log the POST request body to the console
+  const randomShort = generateRandomString(6);
+  urlDatabase[randomShort] = req.body.longURL;
+  console.log(urlDatabase)
+  const longURL = urlDatabase[randomShort]
+  res.redirect(longURL);         // Respond with 'Ok' (we will replace this)
+});
+
+app.get("/u/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render('urls_show', templateVars); // to pass the URL data to our template.
 });
