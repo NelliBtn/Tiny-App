@@ -24,6 +24,11 @@ This is so we can use the key of that variable (in the above case the key is url
 to access the data within our template.
 */
 
+app.get("/urls/:shortURL", (req, res) => {
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  res.render('urls_show', templateVars); // to pass the URL data to our template.
+});
+
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
