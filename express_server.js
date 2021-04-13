@@ -48,6 +48,13 @@ app.get("/u/:shortURL", (req, res) => {
   res.render('urls_show', templateVars); // to pass the URL data to our template.
 });
 
+app.post('/urls/:shortURL/delete', (req, res) => {
+  const shortURL = req.params.shortURL;
+  console.log(req.params);
+  delete urlDatabase[shortURL];
+  res.redirect('/urls');
+});
+
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
