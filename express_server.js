@@ -15,6 +15,7 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+// HOMEPAGE -- LIST OF URLS
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase }
   res.render('urls_index', templateVars); // to pass the URL data to our template.
@@ -26,7 +27,8 @@ This is so we can use the key of that variable (in the above case the key is url
 to access the data within our template.
 */
 
-app.get("/urls/new", (req, res) => {
+// CREATE NEW FORM
+app.get("/urls/new", (req, res) => { // create new form
   res.render("urls_new");
 });
 
@@ -34,26 +36,38 @@ function generateRandomString(length) {
   return Math.random().toString(36).substr(2, length)
 }
 
-app.post("/u", (req, res) => {
+app.post("/urls", (req, res) => { // is not accessable from client side -- creates new url
   console.log(req.body);  // Log the POST request body to the console
   const randomShort = generateRandomString(6);
   urlDatabase[randomShort] = req.body.longURL;
   console.log(urlDatabase)
   const longURL = urlDatabase[randomShort]
-  res.redirect(longURL);         // Respond with 'Ok' (we will replace this)
+  res.redirect('/urls');         // Respond with 'Ok' (we will replace this)
 });
 
-app.get("/u/:shortURL", (req, res) => {
+// INDIVIDUAL PAGE FOR EACH URL + EDIT FORM
+app.get("/urls/:shortURL", (req, res) => { // 'tiny url for: ... short url:...'
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render('urls_show', templateVars); // to pass the URL data to our template.
 });
 
-app.post('/urls/:shortURL/delete', (req, res) => {
+// EDIT FORM
+app.post('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
-  console.log(req.params);
+  const newURL = req.body.newURL;
+  urlDatabase[shortURL] = newURL;
+  res.redirect('/urls') // index
+});
+
+// DELETE
+app.post('/urls/:shortURL/delete', (req, res) => { // not accesable from client side
+  const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect('/urls');
 });
+
+
+
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
