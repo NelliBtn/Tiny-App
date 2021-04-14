@@ -93,8 +93,8 @@ app.post('/urls/:shortURL/delete', (req, res) => { // not accesable from client 
 
 const getUserByEmail = function (email) {
   for (let user in users) {
-    if (user['email'] === email) {
-      return user;
+    if (users[user]['email'] === email) {
+      return users[user]; //object
     }
   }
 }
@@ -102,14 +102,16 @@ const getUserByEmail = function (email) {
 // LOGIN
 app.post('/login', (req, res) => {
   const email = req.body.username;
-  const user = getUserByEmail(email);
-  res.cookie('user_id', user.id); // username is email
+  console.log(req.body)
+  const user = getUserByEmail(email); //object??
+  console.log(user)
+  res.cookie('user_id', user.id);
   res.redirect('/urls')
 });
 
 // LOGOUT
 app.post('/logout', (req, res) => {
-  res.clearCookie('username', req.body.username);
+  res.clearCookie('user_id');
   res.redirect('/urls')
 });
 
@@ -118,6 +120,7 @@ app.get("/register", (req, res) => {
   const userId = req.cookies['user_id']
   const user = users[userId];
   const templateVars = { users, user }
+  console.log(user)
   res.render("urls_registration", templateVars);
 });
 
