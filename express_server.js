@@ -9,8 +9,8 @@ app.use(cookieParser())
 app.set("view engine", "ejs"); // tells the Express app to use EJS as its templating engine
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userId: 'userIdExample1'},
+  "9sm5xK": {longURL: "http://www.google.com", userId: 'userIdExample2'}
 };
 
 const users = { 
@@ -32,7 +32,7 @@ const users = {
 }
 
 app.get('/showme.json', (req, res) => {
-  res.json(users);
+  res.json(urlDatabase);
 });
 
 app.get("/", (req, res) => {
@@ -60,21 +60,24 @@ function generateRandomString(length) {
 }
 
 app.post("/urls", (req, res) => { // is not accessable from client side -- creates new url
-  console.log(req.body);  // Log the POST request body to the console
+  if (Object.keys(req.cookies).length === 0) {
+    return res.redirect('/login');
+  }
+  const userId = req.cookies.user_id;
   const randomShort = generateRandomString(6);
-  urlDatabase[randomShort] = req.body.longURL;
-  console.log(urlDatabase)
-  const longURL = urlDatabase[randomShort]
+  const longURL = req.body.longURL;
+  urlDatabase[randomShort] = { longURL, userId };
+  // const longURL = urlDatabase[randomShort].longUrl;
   res.redirect('/urls');         // Respond with 'Ok' (we will replace this)
 });
 
 // INDIVIDUAL PAGE FOR EACH URL + EDIT FORM
-app.get("/urls/:shortURL", (req, res) => { // 'tiny url for: ... short url:...'
+app.get("/u/:shortURL", (req, res) => { // 'tiny url for: ... short url:...'
   const userId = req.cookies['user_id']
   const user = users[userId];
   const templateVars = { 
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
     users,
     user
   };
