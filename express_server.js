@@ -126,6 +126,15 @@ app.get("/register", (req, res) => {
 
 
 app.post('/register', (req, res) => {
+  // if email or password are empty strings => a response with the 400 status code
+  if (!req.body.email || !req.body.password) {
+    return res.send(`${res.statusCode}: There is an empty field`) // how to make 400?
+  }
+  // if email alreadu exists. need to do in other routes as well (helper function)
+  if (getUserByEmail(req.body.email)) {
+    return res.send(`${res.statusCode}: This email already exists`)
+  }
+
   const email = req.body.email;
   const password = req.body.password;
   const id = generateRandomString(6);
