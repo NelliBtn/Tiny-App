@@ -13,19 +13,40 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
+app.get('/showme.json', (req, res) => {
+  res.json(users);
+});
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
 // HOMEPAGE -- LIST OF URLS
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies['username'] }
+  const userId = req.cookies['user_id']
+  const user = users[userId];
+  const templateVars = { urls: urlDatabase, user }
   res.render('urls_index', templateVars); // to pass the URL data to our template.
 });
 
-// CREATE NEW FORM
+// CREATE NEW URL FORM
 app.get("/urls/new", (req, res) => { // create new form
-  const templateVars = { username: req.cookies['username'] }
+  const userId = req.cookies['user_id']
+  const user = users[userId];
+  const templateVars = { user }
   res.render("urls_new", templateVars);
 });
 
@@ -44,15 +65,18 @@ app.post("/urls", (req, res) => { // is not accessable from client side -- creat
 
 // INDIVIDUAL PAGE FOR EACH URL + EDIT FORM
 app.get("/urls/:shortURL", (req, res) => { // 'tiny url for: ... short url:...'
+  const userId = req.cookies['user_id']
+  const user = users[userId];
   const templateVars = { 
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies['username'] 
+    users,
+    user
   };
   res.render('urls_show', templateVars); // to pass the URL data to our template.
 });
 
-// EDIT FORM
+// EDIT URL FORM
 app.post('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
   const newURL = req.body.newURL;
@@ -60,23 +84,55 @@ app.post('/urls/:shortURL', (req, res) => {
   res.redirect('/urls') // index
 });
 
-// DELETE
+// DELETE URL
 app.post('/urls/:shortURL/delete', (req, res) => { // not accesable from client side
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect('/urls');
 });
 
-//LOGIN
+const getUserByEmail = function (email) {
+  for (let user in users) {
+    if (user['email'] === email) {
+      return user;
+    }
+  }
+}
+
+// LOGIN
 app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username);
+  const email = req.body.username;
+  const user = getUserByEmail(email);
+  res.cookie('user_id', user.id); // username is email
   res.redirect('/urls')
 });
 
 // LOGOUT
 app.post('/logout', (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('username', req.body.username);
   res.redirect('/urls')
+});
+
+// REGISTER
+app.get("/register", (req, res) => {
+  const userId = req.cookies['user_id']
+  const user = users[userId];
+  const templateVars = { users, user }
+  res.render("urls_registration", templateVars);
+});
+
+
+app.post('/register', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const id = generateRandomString(6);
+  users[id] = {
+    id,
+    email,
+    password
+  };
+  res.cookie('user_id', id);
+  res.redirect('/urls');
 });
 
 
