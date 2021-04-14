@@ -15,9 +15,11 @@
             <input class="btn btn-outline-light" type="submit" value="Logout">
           </form> 
           <%} else {%>
-            <form method="POST" action="/login"> 
-              <input style="width: 40%" type="text" placeholder="Username/email" name="username">
+            <form method="GET" action="/login"> 
               <input class="btn btn-outline-light" type="submit" value="Login">
+            </form>
+            <form method="GET" action="/register"> 
+              <input class="btn btn-outline-light" type="submit" value="Register">
             </form>
           <%}%>
       </div>

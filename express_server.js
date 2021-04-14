@@ -23,6 +23,11 @@ const users = {
     id: "user2RandomID", 
     email: "user2@example.com", 
     password: "dishwasher-funk"
+  },
+  'dino': {
+    id: 'dino',
+    email: 't@rex.com',
+    password: 'dino'
   }
 }
 
@@ -96,15 +101,34 @@ const getUserByEmail = function (email) {
     if (users[user]['email'] === email) {
       return users[user]; //object
     }
-  }
+  } return false;
 }
 
 // LOGIN
+app.get('/login', (req, res) => {
+  const userId = req.cookies['user_id']
+  const user = users[userId];
+  const templateVars = { user }
+  res.render('urls_login', templateVars)
+})
+
 app.post('/login', (req, res) => {
-  const email = req.body.username;
-  console.log(req.body)
-  const user = getUserByEmail(email); //object??
-  console.log(user)
+  const email = req.body.email;
+  const user = getUserByEmail(email); //object!
+  const password = req.body.password;
+  // email cant be found
+  if (!email || !password) {
+    res.statusCode = 400;
+    return res.send(`${res.statusCode}: There is an empty field`) // 400 status code
+  }
+  if (!getUserByEmail(email)) {
+    res.statusCode = 403;
+    return res.send(`${res.statusCode}: This email is not found`); // 403
+  }
+  if (getUserByEmail(email).password !== password) {
+    res.statusCode = 403;
+    return res.send(`${res.statusCode}: Wrong password`) // 403 status code.
+  }
   res.cookie('user_id', user.id);
   res.redirect('/urls')
 });
@@ -120,7 +144,6 @@ app.get("/register", (req, res) => {
   const userId = req.cookies['user_id']
   const user = users[userId];
   const templateVars = { users, user }
-  console.log(user)
   res.render("urls_registration", templateVars);
 });
 
@@ -128,10 +151,12 @@ app.get("/register", (req, res) => {
 app.post('/register', (req, res) => {
   // if email or password are empty strings => a response with the 400 status code
   if (!req.body.email || !req.body.password) {
+    res.statusCode = 400;
     return res.send(`${res.statusCode}: There is an empty field`) // how to make 400?
   }
   // if email alreadu exists. need to do in other routes as well (helper function)
   if (getUserByEmail(req.body.email)) {
+    res.statusCode = 400;
     return res.send(`${res.statusCode}: This email already exists`)
   }
 
