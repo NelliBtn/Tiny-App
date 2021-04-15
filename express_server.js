@@ -2,10 +2,11 @@ const express = require("express");
 const app = express(); // pretty much 'Create server'
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser')
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser())
+const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.set("view engine", "ejs"); // tells the Express app to use EJS as its templating engine
 
 const urlDatabase = {
@@ -18,22 +19,22 @@ const users = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: bcrypt.hashSync("dishwasher-funk", 10)
   },
   'dino': {
     id: 'dino',
     email: 't@rex.com',
-    password: 'dino'
+    password: bcrypt.hashSync('dino', 10)
   }
 }
 
 app.get('/showme.json', (req, res) => {
-  res.json(urlDatabase);
+  res.json(users);
 });
 
 app.get("/", (req, res) => {
@@ -47,7 +48,43 @@ const urlsForUser = (urlDatabase, id) => {
       urlsForUserObj[url] = urlDatabase[url];
     }
   } return urlsForUserObj;
-}
+};
+
+const generateRandomString = (length) => {
+  return Math.random().toString(36).substr(2, length)
+};
+
+const getUserByEmail = function (email) {
+  for (let user in users) {
+    if (users[user]['email'] === email) {
+      return users[user]; //object
+    }
+  } return false;
+};
+
+
+//AUTHENTIFICATION FOR LOGIN
+const authentification = (email, password) => {
+  const user = getUserByEmail(email);
+  if (user && bcrypt.compareSync(password, user.password)) { // input password vs object password
+    return { data: user, error: null };
+  };
+
+  if (!email || !password) {
+  res.statusCode = 400;
+  return { data: null, error: res.send(`${res.statusCode}: There is an empty field`)};
+  } else if (!getUserByEmail(email)) {
+    res.statusCode = 403;
+    return { data: null, error: res.send(`${res.statusCode}: This email is not found`)};
+  } else if (getUserByEmail(email).password !== password) {
+    res.statusCode = 403;
+    return { data: null, error: res.send(`${res.statusCode}: Wrong password`)};
+  };
+};
+
+
+
+
 
 // HOMEPAGE -- LIST OF URLS
 app.get("/urls", (req, res) => {
@@ -65,10 +102,6 @@ app.get("/urls/new", (req, res) => { // create new form
   const templateVars = { user }
   res.render("urls_new", templateVars);
 });
-
-function generateRandomString(length) {
-  return Math.random().toString(36).substr(2, length)
-}
 
 app.post("/urls", (req, res) => { // is not accessable from client side -- creates new url
   if (Object.keys(req.cookies).length === 0) {
@@ -127,14 +160,6 @@ app.post('/urls/:shortURL/delete', (req, res) => { // not accesable from client 
   res.redirect('/urls');
 });
 
-const getUserByEmail = function (email) {
-  for (let user in users) {
-    if (users[user]['email'] === email) {
-      return users[user]; //object
-    }
-  } return false;
-}
-
 // LOGIN
 app.get('/login', (req, res) => {
   const userId = req.cookies['user_id']
@@ -145,21 +170,12 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
   const email = req.body.email;
-  const user = getUserByEmail(email); //object!
   const password = req.body.password;
-  // email cant be found
-  if (!email || !password) {
-    res.statusCode = 400;
-    return res.send(`${res.statusCode}: There is an empty field`) // 400 status code
-  }
-  if (!getUserByEmail(email)) {
-    res.statusCode = 403;
-    return res.send(`${res.statusCode}: This email is not found`); // 403
-  }
-  if (getUserByEmail(email).password !== password) {
-    res.statusCode = 403;
-    return res.send(`${res.statusCode}: Wrong password`) // 403 status code.
-  }
+  const result = authentification(email, password);
+  if (result.error) {
+    return res.send(result.error);
+  };
+  const user =  result.data;
   res.cookie('user_id', user.id);
   res.redirect('/urls')
 });
@@ -197,7 +213,7 @@ app.post('/register', (req, res) => {
   users[id] = {
     id,
     email,
-    password
+    password: bcrypt.hashSync(password, 10)
   };
   res.cookie('user_id', id);
   res.redirect('/urls');
