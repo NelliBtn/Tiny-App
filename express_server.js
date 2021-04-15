@@ -10,7 +10,8 @@ app.set("view engine", "ejs"); // tells the Express app to use EJS as its templa
 
 const urlDatabase = {
   "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userId: 'userIdExample1'},
-  "9sm5xK": {longURL: "http://www.google.com", userId: 'userIdExample2'}
+  "9sm5xK": {longURL: "http://www.google.com", userId: 'userIdExample2'},
+  "shortDino": {longURL: "http://dino.com", userId: "dino"}
 };
 
 const users = { 
@@ -39,11 +40,21 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+const urlsForUser = (urlDatabase, id) => {
+  let urlsForUserObj = {};
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userId === id) {
+      urlsForUserObj[url] = urlDatabase[url];
+    }
+  } return urlsForUserObj;
+}
+
 // HOMEPAGE -- LIST OF URLS
 app.get("/urls", (req, res) => {
   const userId = req.cookies['user_id']
   const user = users[userId];
-  const templateVars = { urls: urlDatabase, user }
+  const urlsToShow = urlsForUser(urlDatabase, userId);
+  const templateVars = { user, urlsToShow }
   res.render('urls_index', templateVars); // to pass the URL data to our template.
 });
 
@@ -67,18 +78,27 @@ app.post("/urls", (req, res) => { // is not accessable from client side -- creat
   const randomShort = generateRandomString(6);
   const longURL = req.body.longURL;
   urlDatabase[randomShort] = { longURL, userId };
-  // const longURL = urlDatabase[randomShort].longUrl;
   res.redirect('/urls');         // Respond with 'Ok' (we will replace this)
 });
 
 // INDIVIDUAL PAGE FOR EACH URL + EDIT FORM
 app.get("/u/:shortURL", (req, res) => { // 'tiny url for: ... short url:...'
-  const userId = req.cookies['user_id']
+  if (Object.keys(req.cookies).length === 0) {
+    return res.redirect('/login');
+  }
+  const userId = req.cookies['user_id'];
   const user = users[userId];
+  const urlsToShow = urlsForUser(urlDatabase, userId);
+  const shortURL = req.params.shortURL;
+
+    if (!urlsToShow.hasOwnProperty(shortURL)) { // shortURL is in  this object
+      return res.send('You have no access to this URL')
+    }
+
+  const longURL = urlsToShow[shortURL].longURL;
   const templateVars = { 
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    users,
+    shortURL,
+    longURL,
     user
   };
   res.render('urls_show', templateVars); // to pass the URL data to our template.
@@ -86,7 +106,11 @@ app.get("/u/:shortURL", (req, res) => { // 'tiny url for: ... short url:...'
 
 // EDIT URL FORM
 app.post('/urls/:shortURL', (req, res) => {
+  const userId = req.cookies['user_id'];
   const shortURL = req.params.shortURL;
+  if (!urlDatabase[shortURL].userId !== userId) {
+    return res.send('You cannot edit this URL')
+  }
   const newURL = req.body.newURL;
   urlDatabase[shortURL] = newURL;
   res.redirect('/urls') // index
@@ -95,6 +119,10 @@ app.post('/urls/:shortURL', (req, res) => {
 // DELETE URL
 app.post('/urls/:shortURL/delete', (req, res) => { // not accesable from client side
   const shortURL = req.params.shortURL;
+  const userId = req.cookies['user_id'];
+  if (!urlDatabase[shortURL].userId !== userId) {
+    return res.send('You cannot delete this URL')
+  }
   delete urlDatabase[shortURL];
   res.redirect('/urls');
 });
